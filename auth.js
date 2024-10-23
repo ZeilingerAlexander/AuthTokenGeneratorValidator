@@ -8,6 +8,8 @@ export class Authenticator{
 	#AuthTokensById = new Map();
 	/*Key : Token, Value : {id : any, timeAdded : Number, timeExpires : Number, usages : Number}*/ 
 	#AuthTokensByToken = new Map();
+	/*Key : id, Value : {totpKey,passwordHash}*/
+	#SecretsByIdStore = new Map();
 
 	constructor(init = {}){
 		if (init.maxTokensPerId <= 0){
@@ -69,20 +71,34 @@ export class Authenticator{
 	}
 
 	/*Creates a new authentication for the provided data, if the (user) provided values match<br>
-	 * if id,totpValue,totpKey,passwordValue,hashedPassword is undefined it will throw<br>
+	 * This requires the secrets for id to be registered, if they are not it will throw, this can be avoided by providing secrets {passwordHash,totpKey} <br>
+	 * if id,totp,password is undefined it will throw<br>
 	 * if expiryOverride is set it will override the default token expiry<br>
 	 * returns undefined if the provided data doesn't match (totp or password)<br>
 	 * returns a new auth token <Buffer> on success*/
-	Authenticate = async function(id,passwordValue,hashedPassword,totpValue,totpKey,expiryOverride){
-		if (id === undefined || passwordValue === undefined || hashedPassword === undefined || totpValue === undefined || totpKey === undefined){
-			throw new Error("One or more input variables were undefined, make sure id,passwordValue,hashedPassword,totpValue,totpKey are all set");
+	Authenticate = async function(id,password,totp,secrets){
+		if (id === undefined || password === undefined || totp === undefined){
+			throw new Error("One or more input variables were undefined, make sure id,password and totp are all set");
 		}
 
-		if (await bcrypt.compare(passwordValue, hashedPassword) !== true){
+		let passwordAndTotp;
+		if (secrets !== undefined){
+			passwordAndTotp = secrets;
+		}
+		else{
+			passwordAndTotp = this.#SecretsByIdStore.get(id);
+		}
+		if (passwordAndTotp === undefined || passwordAndTotp.totpKey === undefined || passwordAndTotp.passwordHash === undefined){
+			throw new Error("Bad Secrets, either they weren't found or you provided bad ones. if you provided them they need to inlcude totpKey and passwordHash");
+		}
+		const passwordHash = passwordAndTotp.passwordHash;
+		const totpKey = passwordAndTotp.totpKey;
+
+		if (await bcrypt.compare(password, passwordHash) !== true){
 			return undefined;
 		}
 
-		if (await GenerateTotpValue(totpKey) !== totpValue){
+		if (await GenerateTotpValue(totpKey) !== totp){
 			return undefined;
 		}
 
@@ -92,7 +108,7 @@ export class Authenticator{
 	}
 
 	/*expires a token for the provided token, throws if undefined*/
-	ExpireAuthToken(token){
+	ExpireAuthToken = function(token){
 		if (token === undefined){
 			throw new Error("token can't be undefined");
 		}
@@ -107,7 +123,7 @@ export class Authenticator{
 	}
 
 	/*expires all auth tokens for the provided id, throws if id undefined*/
-	ExpireAllAuthTokens(id){
+	ExpireAllAuthTokens = function(id){
 		if (id === undefined){
 			throw new Error("id can't be undefined");
 		}
@@ -122,7 +138,7 @@ export class Authenticator{
 
 	/* Checks the proivded auth token if it's valid (exists and not expired), returns (if valid) {id,timeAdded : Number,timeExpires : Number, usages : Number} or undefined if its invalid<br>
 	 * Expires tokens if their timeExpires is before the current time (it expired)*/
-	CheckAuthToken = async function(token){
+	CheckAuthToken = function(token){
 		const tokenData = this.#AuthTokensByToken.get(token);
 		if (tokenData !== undefined){
 			tokenData.usages++;
@@ -132,6 +148,30 @@ export class Authenticator{
 			}
 		}
 		return tokenData;
+	}
+
+	/*Checks if there is a secret with the provided Identifier, returns true/false*/
+	CheckIfSecretIsRegisterWithIdentifier = function(id){
+		return this.#SecretsByIdStore.has(id);
+	}
+
+	/*Removes Secrets with the provided id*/
+	RemoveSecrets = function (id){
+		this.#SecretsByIdStore.delete(id);
+	}
+
+	/*Registers the provided secrets to the identifier provided, throws if any undefined, returns true if the secrets were added, false if the identifier is already in the secret store*/
+	RegisterSecrets = function(id,passwordHash,totpKey){
+		if (id === undefined || passwordHash === undefined || totpKey === undefined){
+			throw new Error("id,passwordHash and totpKey can't be undefined");
+		}
+		if (this.#SecretsByIdStore.has(id) === false){
+			this.#SecretsByIdStore.set(id,{passwordHash : passwordHash, totpKey : totpKey});
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 
 	/*Creates a new password Hash and totp Key, returns it in an object {hash : String(bcrypt) ,totpKey,String(hex)}<br>
