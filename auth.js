@@ -20,6 +20,7 @@ export class Authenticator{
 		this.ExpiryTimeS = init.expiryTimeS === undefined ? 604800 : init.expiryTimeS;
 		this.BcryptHashRounds = init.bcryptHashRounds === undefined ? 12 : init.bcryptHashRounds;
 		this.AuthTokenLength = init.authTokenLength === undefined ? 32 : init.authTokenLength;
+		this.TotpKeySize = init.totpKeySize === undefined ? 32 : init.totpKeySize;
 	}
 
 	/*Adds a token with the provided identifier. If expiryOverride is set will override the default expiry Time<br>
@@ -132,7 +133,7 @@ export class Authenticator{
 			throw new Error("password can't be undefined");
 		}
 
-		return {hash : await bcrypt.hash(password,BcryptHashRounds), totpKey : crypto.randomBytes(20)}
+		return {hash : await bcrypt.hash(password,this.BcryptHashRounds), totpKey : crypto.randomBytes(this.TotpKeySize)}
 	}
 }
 
