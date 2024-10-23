@@ -1,4 +1,4 @@
-DataEncrypterAndDecrypter, allows for encrypting and decrypting data using the built in node js crypto library
+AuthTokenGeneratorValidator, allows generating auth tokens and validating them.
 
 Copyright (C) 2024 Zeilinger ALexander 
 
