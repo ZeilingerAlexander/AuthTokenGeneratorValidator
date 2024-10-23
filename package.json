@@ -1,5 +1,5 @@
 {
-  "name": "2fauth-api",
+  "name": "2fauth-lib",
   "version": "1.0.0",
   "description": "Authorization lib for authenticating users with passwords and 2fa",
   "main": "auth.js",
