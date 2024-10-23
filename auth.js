@@ -169,8 +169,14 @@ export class Authenticator{
 		this.#SecretsByIdStore.delete(id);
 	}
 
-	/*Registers the provided secrets to the identifier provided, throws if any undefined, returns true if the secrets were added, false if the identifier is already in the secret store*/
+	/*Registers the provided secrets to the identifier provided, throws if any undefined, returns true if the secrets were added, false if the identifier is already in the secret store<br>
+	 * can also be called with second parameter set to an object that has <passwordHash,totpKey>*/
 	RegisterSecrets = function(id,passwordHash,totpKey){
+		// attempt to read secrets from object
+		if (passwordHash !== undefined && passwordHash.constructor !== undefined && passwordHash.constructor.name === "Object"){
+			totpKey = passwordHash.totpKey;
+			passwordHash = passwordHash.passwordHash;
+		}
 		if (id === undefined || passwordHash === undefined || totpKey === undefined){
 			throw new Error("id,passwordHash and totpKey can't be undefined");
 		}
