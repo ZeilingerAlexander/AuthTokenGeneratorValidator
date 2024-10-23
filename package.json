@@ -1,0 +1,30 @@
+{
+  "name": "2fauth-api",
+  "version": "1.0.0",
+  "description": "Authorization api for authenticating users with passwords and 2fa",
+  "main": "auth.js",
+  "module": "auth.js",
+  "scripts": {
+    "test": "NODE_OPTIONS='--experimental-vm-modules --experimental-specifier-resolution=node' jest"
+  },
+  "keywords": [
+    "authroization",
+    "2fa",
+    "api"
+  ],
+  "author": "Zeilinger Alexander",
+  "license": "GPL-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "TODO : add"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "totp_generator_hexadecimal": "^1.0.1",
+    "url-route-getroutingendpoint": "^1.0.1"
+  }
+}
