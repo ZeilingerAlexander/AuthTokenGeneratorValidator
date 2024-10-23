@@ -13,10 +13,10 @@
     "api"
   ],
   "files": [
-	  "index.js",
-	  "LICENSE",
-	  "README.MS",
-	  "package.json"
+    "index.js",
+    "LICENSE",
+    "README.MS",
+    "package.json"
   ],
   "author": "Zeilinger Alexander",
   "license": "GPL-2.0",
@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "totp_generator_hexadecimal": "^1.0.1",
-    "url-route-getroutingendpoint": "^1.0.1"
+    "totp_generator_hexadecimal": "^1.0.1"
   }
 }
