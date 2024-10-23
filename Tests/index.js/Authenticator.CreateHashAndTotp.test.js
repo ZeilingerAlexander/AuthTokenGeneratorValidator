@@ -1,5 +1,5 @@
 import {GenerateTotpValue} from "totp_generator_hexadecimal";
-import {Authenticator} from "../../auth.js";
+import {Authenticator} from "../../index.js";
 import bcrypt from "bcrypt";
 
 test("CreateHashAndTotp should return correct values", async () => {
