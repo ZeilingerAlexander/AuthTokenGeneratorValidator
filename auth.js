@@ -87,6 +87,15 @@ export class Authenticator{
 		return authToken;
 	}
 
+	/* Checks the proivded auth token if it's valid (exists), returns (if valid) {id,timeAdded : Number,timeExpires : Number, usages : Number} or undefined if its invalid */
+	CheckAuthToken = async function(token){
+		const tokenData = this.#AuthTokensByToken.get(token);
+		if (tokenData !== undefined){
+			tokenData.usages++;
+		}
+		return tokenData;
+	}
+
 	/*Creates a new password Hash and totp Key, returns it in an object {hash : String(bcrypt) ,totpKey,String(hex)}<br>
 	 * throws if password is undefined*/
 	CreateHashAndTotp = async function(password){
