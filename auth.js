@@ -87,6 +87,35 @@ export class Authenticator{
 		return authToken;
 	}
 
+	/*expires a token for the provided token, throws if undefined*/
+	ExpireAuthToken(token){
+		if (token === undefined){
+			throw new Error("token can't be undefined");
+		}
+		const tokenData = this.#AuthTokensByToken.get(token);
+		if (tokenData !== undefined){
+			const tokenSetForId = this.#AuthTokensById.get(tokenData.id);
+			if (tokenSetForId !== undefined){
+				tokenSetForId.delete(token);
+			}
+			this.#AuthTokensByToken.delete(token);
+		}
+	}
+
+	/*expires all auth tokens for the provided id, throws if id undefined*/
+	ExpireAllAuthTokens(id){
+		if (id === undefined){
+			throw new Error("id can't be undefined");
+		}
+		const tokenSet = this.#AuthTokensById.get(id);
+		if (tokenSet !== undefined){
+			for (const token of tokenSet){
+				this.#AuthTokensByToken.delete(token);
+			}
+			tokenSet.clear();
+		}
+	}
+
 	/* Checks the proivded auth token if it's valid (exists), returns (if valid) {id,timeAdded : Number,timeExpires : Number, usages : Number} or undefined if its invalid */
 	CheckAuthToken = async function(token){
 		const tokenData = this.#AuthTokensByToken.get(token);
