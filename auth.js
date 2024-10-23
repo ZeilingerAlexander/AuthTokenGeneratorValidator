@@ -37,7 +37,7 @@ export class Authenticator{
 			throw new Error("Token and Id can't be undefined");
 		}
 
-		const authTokenSet = this.#AuthTokensById.get(id);
+		let authTokenSet = this.#AuthTokensById.get(id);
 		if (authTokenSet === undefined){
 			authTokenSet = new Set();
 			this.#AuthTokensById.set(id,authTokenSet);
@@ -71,12 +71,16 @@ export class Authenticator{
 	}
 
 	/*Creates a new authentication for the provided data, if the (user) provided values match<br>
-	 * This requires the secrets for id to be registered, if they are not it will throw, this can be avoided by providing secrets {passwordHash,totpKey} <br>
+	 * This requires the secrets for id to be registered, if they are not it will throw, this can be avoided by providing secrets {passwordHash,totpKey} in optionalParams.secrets <br>
+	 * optional params accepts { secrets : object<passwordHash,totpKey>, expiryOverride : Number (overrides the default expiry time)}
 	 * if id,totp,password is undefined it will throw<br>
 	 * if expiryOverride is set it will override the default token expiry<br>
 	 * returns undefined if the provided data doesn't match (totp or password)<br>
 	 * returns a new auth token <Buffer> on success*/
-	Authenticate = async function(id,password,totp,secrets){
+	Authenticate = async function(id,password,totp,optionalParams){
+		const expiryOverride = optionalParams.expiryOverride;
+		const secrets = optionalParams.secrets;
+
 		if (id === undefined || password === undefined || totp === undefined){
 			throw new Error("One or more input variables were undefined, make sure id,password and totp are all set");
 		}
@@ -98,11 +102,12 @@ export class Authenticator{
 			return undefined;
 		}
 
-		if (await GenerateTotpValue(totpKey) !== totp){
+		const actualTotp = await GenerateTotpValue(totpKey);
+		if (actualTotp !== totp){
 			return undefined;
 		}
 
-		const authToken = await randomBytesPromise(AuthTokenLength);
+		const authToken = await randomBytesPromise(this.AuthTokenLength);
 		await this.#AddAuthToken(authToken,id,expiryOverride);
 		return authToken;
 	}
@@ -174,14 +179,14 @@ export class Authenticator{
 		}
 	}
 
-	/*Creates a new password Hash and totp Key, returns it in an object {hash : String(bcrypt) ,totpKey,String(hex)}<br>
+	/*Creates a new password Hash and totp Key, returns it in an object {passwordHash : String(bcrypt) ,totpKey,buffer}<br>
 	 * throws if password is undefined*/
 	CreateHashAndTotp = async function(password){
 		if (password === undefined){
 			throw new Error("password can't be undefined");
 		}
 
-		return {hash : await bcrypt.hash(password,this.BcryptHashRounds), totpKey : crypto.randomBytes(this.TotpKeySize)}
+		return {passwordHash : await bcrypt.hash(password,this.BcryptHashRounds), totpKey : crypto.randomBytes(this.TotpKeySize)}
 	}
 }
 
