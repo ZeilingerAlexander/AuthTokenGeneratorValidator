@@ -16,6 +16,9 @@ export class Authenticator{
 		if (init.expiryTimeS < 5){
 			throw new Error("Expiry time must be greater or equal to 5 seconds");
 		}
+		if (init.TotpKeySize < 20){
+			throw new Error("cant go below the recommended totp key size, see https://datatracker.ietf.org/doc/html/rfc4226");
+		}
 		this.MaxTokensPerId = init.maxTokensPerId === undefined ? 10 : init.maxTokensPerId;
 		this.ExpiryTimeS = init.expiryTimeS === undefined ? 604800 : init.expiryTimeS;
 		this.BcryptHashRounds = init.bcryptHashRounds === undefined ? 12 : init.bcryptHashRounds;
@@ -60,7 +63,7 @@ export class Authenticator{
 		}
 		// add the token
 		const expiry = expiryOverride === undefined ? this.ExpiryTimeS : expiryOverride;
-		const timeNow = Math.floor(Date.now() / 1000);
+		const timeNow = GetCurrentTime(); 
 		authTokenSet.add(token);
 		this.#AuthTokensByToken.set(token,{id : id, timeAdded : timeNow, timeExpires : timeNow + expiry, usages : 0});
 	}
@@ -117,11 +120,16 @@ export class Authenticator{
 		}
 	}
 
-	/* Checks the proivded auth token if it's valid (exists), returns (if valid) {id,timeAdded : Number,timeExpires : Number, usages : Number} or undefined if its invalid */
+	/* Checks the proivded auth token if it's valid (exists and not expired), returns (if valid) {id,timeAdded : Number,timeExpires : Number, usages : Number} or undefined if its invalid<br>
+	 * Expires tokens if their timeExpires is before the current time (it expired)*/
 	CheckAuthToken = async function(token){
 		const tokenData = this.#AuthTokensByToken.get(token);
 		if (tokenData !== undefined){
 			tokenData.usages++;
+			if (tokenData.timeExpires < GetCurrentTime()){
+				ExpireAuthToken(token);
+				return undefined;
+			}
 		}
 		return tokenData;
 	}
@@ -144,4 +152,8 @@ async function randomBytesPromise(len){
 			resolve(buff);
 		});
 	});
+}
+
+function GetCurrentTime(){
+	return Math.floor(Date.now() / 1000);
 }
