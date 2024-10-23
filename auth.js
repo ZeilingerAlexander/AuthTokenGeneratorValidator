@@ -78,8 +78,12 @@ export class Authenticator{
 	 * returns undefined if the provided data doesn't match (totp or password)<br>
 	 * returns a new auth token <Buffer> on success*/
 	Authenticate = async function(id,password,totp,optionalParams){
-		const expiryOverride = optionalParams.expiryOverride;
-		const secrets = optionalParams.secrets;
+		let expiryOverride;
+		let secrets;
+		if (optionalParams !== undefined){
+			expiryOverride = optionalParams.expiryOverride;
+			secrets = optionalParams.secrets;
+		}
 
 		if (id === undefined || password === undefined || totp === undefined){
 			throw new Error("One or more input variables were undefined, make sure id,password and totp are all set");
